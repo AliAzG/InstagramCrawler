@@ -1,4 +1,5 @@
 from __future__ import division
+import urllib
 
 import argparse
 import codecs
@@ -132,6 +133,11 @@ class InstagramCrawler(object):
             self.browse_target_page(query)
             # Scrape captions
             self.scrape_followers_or_following(crawl_type, query, number)
+
+        elif crawl_type == 'profile_img':
+            self.browse_target_page(query)
+            self.profile_img(crawl_type, query, number)
+            
         else:
             print("Unknown crawl type: {}".format(crawl_type))
             self.quit()
@@ -237,6 +243,16 @@ class InstagramCrawler(object):
             captions.append(caption)
 
         self.data['captions'] = captions
+        
+    def profile_img(self, crawl_type, query, number):
+        try:
+            img = self._driver.find_element_by_xpath('//img[@class="_6q-tv"]')
+        except:
+            img = self._driver.find_element_by_xpath('//button[@class="IalUJ "]/img')
+        src = img.get_attribute('src')
+        # download the image
+        img_name = './data/'+query+'.jpg'
+        urllib.urlretrieve(src, img_name)
 
     def scrape_followers_or_following(self, crawl_type, query, number):
         print("Scraping {}...".format(crawl_type))
@@ -265,27 +281,30 @@ class InstagramCrawler(object):
             EC.presence_of_element_located(
                 (By.XPATH, FOLLOW_PATH))
         )
-        List = title_ele.find_element_by_xpath(
-            '..').find_element_by_tag_name('ul')
-        List.click()
 
-        # Loop through list till target number is reached
-        num_of_shown_follow = len(List.find_elements_by_xpath('*'))
-        while len(List.find_elements_by_xpath('*')) < number:
-            element = List.find_elements_by_xpath('*')[-1]
-            # Work around for now => should use selenium's Expected Conditions!
-            try:
-                element.send_keys(Keys.PAGE_DOWN)
-            except Exception as e:
-                time.sleep(0.1)
-
+        
         follow_items = []
-        for ele in List.find_elements_by_xpath('*')[:number]:
-            follow_items.append(ele.text.split('\n')[0])
+        element = self._driver.find_element_by_xpath('//div[@class="isgrP"]')
+        n = 50
+        followiingcount= self._driver.find_elements_by_xpath('//a[@class="-nal3 "]/span')[1].text
+
+        for _ in range(1500):
+            print(_)
+            time.sleep(0.1)
+            
+            self._driver.execute_script("arguments[0].scrollTop = " + str(n), element)
+            n = n + 50
+            
+
+        List = title_ele.find_elements_by_xpath('//a[@class="FPmhX notranslate _0imsa "]')
+
+        for ele in range(0,len(List)):
+            follow_items.append(List[ele].get_attribute("title"))
 
         self.data[crawl_type] = follow_items
 
     def download_and_save(self, dir_prefix, query, crawl_type):
+
         # Check if is hashtag
         dir_name = query.lstrip(
             '#') + '.hashtag' if query.startswith('#') else query
@@ -305,8 +324,13 @@ class InstagramCrawler(object):
             filename = str(idx) + ext
             filepath = os.path.join(dir_path, filename)
             # Send image request
+            
             urlretrieve(photo_link, filepath)
-
+        #try:
+        #   title_name = self._driver.find_element_by_xpath('//div[@class="-vDIg"]/h1').text
+        #    bio = self._driver.find_element_by_xpath('//div[@class="-vDIg"]/span').text
+        #   print(20*'*', bio, title_name)
+            
         # Save Captions
         for idx, caption in enumerate(self.data['captions'], 0):
 
