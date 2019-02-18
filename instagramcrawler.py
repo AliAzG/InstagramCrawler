@@ -162,39 +162,27 @@ class InstagramCrawler(object):
         self._driver.get(target_url)
 
     def scroll_to_num_of_posts(self, number):
-        # Get total number of posts of page
-        num_info = re.search(r'\], "count": \d+',
-                             self._driver.page_source).group()
-        num_of_posts = int(re.findall(r'\d+', num_info)[0])
-        print("posts: {}, number: {}".format(num_of_posts, number))
+        num_of_posts = 10
         number = number if number < num_of_posts else num_of_posts
+        print("posts: {}, number: {}".format(num_of_posts, number))
 
-        # scroll page until reached
-        loadmore = WebDriverWait(self._driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, CSS_LOAD_MORE))
-        )
-        loadmore.click()
-
-        num_to_scroll = int((number - 12) / 12) + 1
+        num_to_scroll = 30
+        i=0
+        finallist=[]
         for _ in range(num_to_scroll):
+            page1 = self._driver.find_elements_by_xpath('//img[@class="FFVAD"]')
+            #encased_photo_links = []
+            for p in range(0, len(page1)):
+                if page1[p].get_attribute('src') not in finallist:
+                    print('##########', len(finallist))
+                    finallist.append(page1[p].get_attribute('src'))
+                    img = str(i)+'a'+str(p)
+                    img_name = './data/instagram/'+str(img)+'.jpg'
+                    print(img_name)
+                    urllib.urlretrieve(page1[p].get_attribute('src'), img_name)
             self._driver.execute_script(SCROLL_DOWN)
             time.sleep(0.2)
-            self._driver.execute_script(SCROLL_UP)
-            time.sleep(0.2)
-
-    def scrape_photo_links(self, number, is_hashtag=False):
-        print("Scraping photo links...")
-        encased_photo_links = re.finditer(r'src="([https]+:...[\/\w \.-]*..[\/\w \.-]*'
-                                          r'..[\/\w \.-]*..[\/\w \.-].jpg)', self._driver.page_source)
-
-        photo_links = [m.group(1) for m in encased_photo_links]
-
-        print("Number of photo_links: {}".format(len(photo_links)))
-
-        begin = 0 if is_hashtag else 1
-
-        self.data['photo_links'] = photo_links[begin:number + begin]
+            i = i + 1
 
     def click_and_scrape_captions(self, number):
         print("Scraping captions...")
