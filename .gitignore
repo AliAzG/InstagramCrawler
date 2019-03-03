@@ -3,7 +3,7 @@ data
 
 # prevent terrible mistakes
 auth.json
-
+auth.json.example
 # driver logs
 geckodriver.log
 ghostdriver.log

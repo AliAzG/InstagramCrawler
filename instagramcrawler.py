@@ -115,9 +115,9 @@ class InstagramCrawler(object):
             # Browse target page
             self.browse_target_page(query)
             # Scroll down until target number photos is reached
-            self.scroll_to_num_of_posts(number)
+            self.scroll_to_num_of_posts(number, query)
             # Scrape photo links
-            self.scrape_photo_links(number, is_hashtag=query.startswith("#"))
+            #self.scrape_photo_links(number, is_hashtag=query.startswith("#"))
             # Scrape captions if specified
             if caption is True:
                 self.click_and_scrape_captions(number)
@@ -161,28 +161,29 @@ class InstagramCrawler(object):
 
         self._driver.get(target_url)
 
-    def scroll_to_num_of_posts(self, number):
-        num_of_posts = 10
+    def scroll_to_num_of_posts(self, number, query):
+        num_of_posts = number
         number = number if number < num_of_posts else num_of_posts
         print("posts: {}, number: {}".format(num_of_posts, number))
-
-        num_to_scroll = 30
-        i=0
+        dir_path = './data/'+str(query)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        num_to_scroll = number
         finallist=[]
         for _ in range(num_to_scroll):
-            page1 = self._driver.find_elements_by_xpath('//img[@class="FFVAD"]')
-            #encased_photo_links = []
-            for p in range(0, len(page1)):
-                if page1[p].get_attribute('src') not in finallist:
+            page1 = self._driver.find_elements_by_xpath('//div[@class="v1Nh3 kIKUG  _bz0w"]/a')
+            page2 = self._driver.find_elements_by_xpath('//div[@class="v1Nh3 kIKUG  _bz0w"]/a/div/div/img')
+            for p in range(0, len(page2)):
+                if page1[p].get_attribute('href')[28:39] not in finallist:
                     print('##########', len(finallist))
-                    finallist.append(page1[p].get_attribute('src'))
-                    img = str(i)+'a'+str(p)
-                    img_name = './data/instagram/'+str(img)+'.jpg'
+                    finallist.append(page1[p].get_attribute('href')[28:39])
+                    #img = str(i)+'a'+str(p)
+                    #print(img)
+                    img_name = './data/'+str(query)+"/"+page1[p].get_attribute('href')[28:39]+'.jpg'
                     print(img_name)
-                    urllib.urlretrieve(page1[p].get_attribute('src'), img_name)
+                    urllib.urlretrieve(page2[p].get_attribute('src'), img_name)
             self._driver.execute_script(SCROLL_DOWN)
             time.sleep(0.2)
-            i = i + 1
 
     def click_and_scrape_captions(self, number):
         print("Scraping captions...")
@@ -276,7 +277,7 @@ class InstagramCrawler(object):
         n = 50
         followiingcount= self._driver.find_elements_by_xpath('//a[@class="-nal3 "]/span')[1].text
 
-        for _ in range(1500):
+        for _ in range(number):
             print(_)
             time.sleep(0.1)
             
