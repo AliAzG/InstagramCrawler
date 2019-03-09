@@ -157,6 +157,13 @@ class InstagramCrawler(object):
             time.sleep(1.0)
 
             self.quit()
+
+        elif crawl_type == 'get_page_id':
+            for i in range(0, len(os.listdir('./data/'))):
+                print(os.listdir('./data/')[i])
+                for j in range(0, len(os.listdir('./data/'+os.listdir('./data/')[i]))):
+                    print(os.listdir('./data/'+os.listdir('./data/')[i])[j])
+            self.quit()
         else:
             print("Unknown crawl type: {}".format(crawl_type))
             self.quit()
@@ -206,7 +213,6 @@ class InstagramCrawler(object):
             for p in range(0, len(page2)):
                 name = page1[p].get_attribute('href')[28:39]
                 if '/' in name:
-                    print('SLASSSSSSSSHHHHHHHHHHHH')
                     name = re.sub("/", "", name)
                 if name not in finallist:
                     print('##########', len(finallist))
@@ -222,7 +228,7 @@ class InstagramCrawler(object):
             self._driver.execute_script(SCROLL_DOWN)
             
             time.sleep(0.1)
-
+        self.quit()
     def click_and_scrape_captions(self, number):
         print("Scraping captions...")
         captions = []
