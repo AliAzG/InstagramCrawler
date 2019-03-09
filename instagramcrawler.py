@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import time
+import re
 try:
     from urlparse import urljoin
     from urllib import urlretrieve
@@ -137,18 +138,36 @@ class InstagramCrawler(object):
         elif crawl_type == 'profile_img':
             self.browse_target_page(query)
             self.profile_img(crawl_type, query, number)
-            
+        
+        elif crawl_type == 'page_id':
+            relative_url = urljoin(HOST, "p/"+query+"/")
+
+            target_url = urljoin(HOST, relative_url)
+
+            self._driver.get(target_url)
+
+            element_id = self._driver.find_element_by_xpath('//a[@class="FPmhX notranslate nJAzx"]')
+
+            title = element_id.get_attribute('title')
+
+
+            with open('./data/IDs/ids.txt', 'a') as myfile:
+                myfile.write(title + "\n")
+
+            time.sleep(1.0)
+
+            self.quit()
         else:
             print("Unknown crawl type: {}".format(crawl_type))
             self.quit()
             return
         # Save to directory
-        print("Saving...")
-        self.download_and_save(dir_prefix, query, crawl_type)
+            print("Saving...")
+            self.download_and_save(dir_prefix, query, crawl_type)
 
-        # Quit driver
-        print("Quitting driver...")
-        self.quit()
+            # Quit driver
+            print("Quitting driver...")
+            self.quit()
 
     def browse_target_page(self, query):
         # Browse Hashtags
@@ -162,9 +181,20 @@ class InstagramCrawler(object):
         self._driver.get(target_url)
 
     def scroll_to_num_of_posts(self, number, query):
-        num_of_posts = number
+
+        num_of_posts_str = self._driver.find_element_by_xpath('//span[@class="g47SY "]').text
+
+        if ',' in num_of_posts_str:
+
+            num_of_posts_str = re.sub(",", "", num_of_posts_str)
+            num_of_posts = int(num_of_posts_str)
+
+        else:
+
+            num_of_posts = int(num_of_posts_str)
+
         number = number if number < num_of_posts else num_of_posts
-        print("posts: {}, number: {}".format(num_of_posts, number))
+        print("posts: {}, number of scrolls: {}".format(num_of_posts, number))
         dir_path = './data/'+str(query)
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -174,16 +204,24 @@ class InstagramCrawler(object):
             page1 = self._driver.find_elements_by_xpath('//div[@class="v1Nh3 kIKUG  _bz0w"]/a')
             page2 = self._driver.find_elements_by_xpath('//div[@class="v1Nh3 kIKUG  _bz0w"]/a/div/div/img')
             for p in range(0, len(page2)):
-                if page1[p].get_attribute('href')[28:39] not in finallist:
+                name = page1[p].get_attribute('href')[28:39]
+                if '/' in name:
+                    print('SLASSSSSSSSHHHHHHHHHHHH')
+                    name = re.sub("/", "", name)
+                if name not in finallist:
                     print('##########', len(finallist))
-                    finallist.append(page1[p].get_attribute('href')[28:39])
-                    #img = str(i)+'a'+str(p)
-                    #print(img)
-                    img_name = './data/'+str(query)+"/"+page1[p].get_attribute('href')[28:39]+'.jpg'
-                    print(img_name)
-                    urllib.urlretrieve(page2[p].get_attribute('src'), img_name)
+                    if len(finallist)+1 == num_of_posts:
+                        self.quit()
+                    else:
+                        finallist.append(name)
+
+                        img_name = './data/'+str(query)+"/"+name+'.jpg'
+
+                        urllib.urlretrieve(page2[p].get_attribute('src'), img_name)
+
             self._driver.execute_script(SCROLL_DOWN)
-            time.sleep(0.2)
+            
+            time.sleep(0.1)
 
     def click_and_scrape_captions(self, number):
         print("Scraping captions...")
