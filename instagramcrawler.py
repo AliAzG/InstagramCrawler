@@ -1,4 +1,9 @@
+# encoding=utf8  
 from __future__ import division
+import sys  
+
+reload(sys)  
+sys.setdefaultencoding('utf8')
 import urllib
 
 import argparse
@@ -178,7 +183,7 @@ class InstagramCrawler(object):
 
     def browse_target_page(self, query):
         # Browse Hashtags
-        if query.startswith('#'):
+        if query.startswith('#') or '#' in query:
             relative_url = urljoin('explore/tags/', query.strip('#'))
         else:  # Browse user page
             relative_url = query
@@ -207,10 +212,10 @@ class InstagramCrawler(object):
             os.makedirs(dir_path)
         num_to_scroll = number
         finallist=[]
-        for _ in range(num_to_scroll):
+        for _ in range(num_of_posts):
             page1 = self._driver.find_elements_by_xpath('//div[@class="v1Nh3 kIKUG  _bz0w"]/a')
             page2 = self._driver.find_elements_by_xpath('//div[@class="v1Nh3 kIKUG  _bz0w"]/a/div/div/img')
-            for p in range(0, len(page2)):
+            for p in range(0, len(page1)):
                 name = page1[p].get_attribute('href')[28:39]
                 if '/' in name:
                     name = re.sub("/", "", name)
@@ -221,13 +226,13 @@ class InstagramCrawler(object):
                     else:
                         finallist.append(name)
 
-                        img_name = './data/'+str(query)+"/"+name+'.jpg'
+                        img_name = './data/'+query.decode().encode('utf-8')+"/"+name+'.jpg'
 
                         urllib.urlretrieve(page2[p].get_attribute('src'), img_name)
 
             self._driver.execute_script(SCROLL_DOWN)
             
-            time.sleep(0.1)
+            time.sleep(0.3)
         self.quit()
     def click_and_scrape_captions(self, number):
         print("Scraping captions...")
