@@ -1,10 +1,6 @@
-# encoding=utf8  
 from __future__ import division
-import sys  
 
-reload(sys)  
-sys.setdefaultencoding('utf8')
-import urllib
+import urllib.request
 
 import argparse
 import codecs
@@ -34,6 +30,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 # HOST
 HOST = 'http://www.instagram.com'
+
+data_directory = './data/'
+
+if not os.path.exists(data_directory):
+    os.makedirs(data_directory)
 
 # SELENIUM CSS SELECTOR
 CSS_LOAD_MORE = "a._1cr2e._epyes"
@@ -220,15 +221,15 @@ class InstagramCrawler(object):
                 if '/' in name:
                     name = re.sub("/", "", name)
                 if name not in finallist:
-                    print('##########', len(finallist))
+                    # print('##########', len(finallist))
                     if len(finallist)+1 == num_of_posts:
                         self.quit()
                     else:
                         finallist.append(name)
 
-                        img_name = './data/'+query.decode().encode('utf-8')+"/"+name+'.jpg'
+                        img_name = './data/'+query+"/"+name+'.jpg'
 
-                        urllib.urlretrieve(page2[p].get_attribute('src'), img_name)
+                        urllib.request.urlretrieve(page2[p].get_attribute('src'), img_name)
 
             self._driver.execute_script(SCROLL_DOWN)
             
@@ -286,12 +287,15 @@ class InstagramCrawler(object):
         try:
             img = self._driver.find_element_by_xpath('//img[@class="_6q-tv"]')
         except:
-            img = self._driver.find_element_by_xpath('//button[@class="IalUJ "]/img')
+            try:
+                img = self._driver.find_element_by_xpath('//button[@class="IalUJ "]/img')
+            except:
+                self._driver.quit()
         src = img.get_attribute('src')
         # download the image
         img_name = './data/'+query+'.jpg'
-        urllib.urlretrieve(src, img_name)
-
+        urllib.request.urlretrieve(src, img_name)
+        self._driver.quit()
     def scrape_followers_or_following(self, crawl_type, query, number):
         print("Scraping {}...".format(crawl_type))
         if crawl_type == "followers":
